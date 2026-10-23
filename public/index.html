@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foodie Map Việt Nam — Bản đồ ẩm thực & Shopping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-icon">🍜</span>
+      <div>
+        <h1>Foodie Map <span>Việt Nam</span></h1>
+        <p>Khám phá & review ẩm thực, shopping khắp mọi miền</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Tìm địa điểm, món ăn..." />
+        <button id="searchBtn" title="Tìm kiếm">🔍</button>
+      </div>
+      <button class="btn-find-partner" id="openPartnerBtn">👥 Tìm bạn đi cùng</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="filters">
+        <h2>Bộ lọc</h2>
+        <div class="filter-group">
+          <label>Loại địa điểm</label>
+          <div class="chips" id="categoryChips">
+            <button class="chip active" data-cat="all">Tất cả</button>
+            <button class="chip" data-cat="food">🍲 Ẩm thực</button>
+            <button class="chip" data-cat="shopping">🛍️ Shopping</button>
+            <button class="chip" data-cat="cafe">☕ Café</button>
+            <button class="chip" data-cat="nightlife">🌃 Giải trí</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label>Thành phố</label>
+          <select id="citySelect">
+            <option value="all">Tất cả tỉnh/thành (63)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>💰 Khoảng giá</label>
+          <div class="price-filter">
+            <select id="priceMinSelect">
+              <option value="all">Giá từ</option>
+              <option value="0">Từ 0đ</option>
+              <option value="20000">Từ 20.000đ</option>
+              <option value="30000">Từ 30.000đ</option>
+              <option value="50000">Từ 50.000đ</option>
+              <option value="100000">Từ 100.000đ</option>
+              <option value="200000">Từ 200.000đ</option>
+              <option value="500000">Từ 500.000đ</option>
+            </select>
+            <span class="price-sep">–</span>
+            <select id="priceMaxSelect">
+              <option value="all">Đến</option>
+              <option value="20000">≤ 20.000đ</option>
+              <option value="30000">≤ 30.000đ</option>
+              <option value="50000">≤ 50.000đ</option>
+              <option value="100000">≤ 100.000đ</option>
+              <option value="200000">≤ 200.000đ</option>
+              <option value="500000">≤ 500.000đ</option>
+              <option value="1000000">≤ 1.000.000đ</option>
+              <option value="3000000">≤ 3.000.000đ</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="place-list" id="placeList">
+        <p class="list-hint">Đang tải dữ liệu...</p>
+      </div>
+
+      <button class="btn-add" id="addPlaceBtn">➕ Thêm địa điểm mới</button>
+    </aside>
+
+    <!-- Map -->
+    <main class="map-wrap">
+      <div id="map"></div>
+      <div class="map-stats" id="mapStats"></div>
+
+      <div class="detail-panel hidden" id="detailPanel">
+        <button class="close-btn" id="closeDetail">✕</button>
+        <div id="detailContent"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: thêm địa điểm -->
+  <div class="modal hidden" id="addPlaceModal">
+    <div class="modal-box">
+      <h2>Thêm địa điểm mới</h2>
+      <button class="close-btn" id="closeAddPlace">✕</button>
+      <form id="addPlaceForm">
+        <div class="form-grid">
+          <label>Tên địa điểm *<input required name="name" placeholder="Vd: Phở Gia Truyền" /></label>
+          <label>Loại *
+            <select name="category">
+              <option value="food">🍲 Ẩm thực</option>
+              <option value="shopping">🛍️ Shopping</option>
+              <option value="cafe">☕ Café</option>
+              <option value="nightlife">🌃 Giải trí</option>
+            </select>
+          </label>
+          <label>Thành phố *
+            <select name="city" id="addCitySelect" required>
+              <option value="">— Chọn tỉnh/thành —</option>
+            </select>
+          </label>
+          <label>Địa chỉ<input name="address" placeholder="Số nhà, đường..." /></label>
+          <label>Latitude *<input required name="lat" type="number" step="any" placeholder="21.0335" /></label>
+          <label>Longitude *<input required name="lng" type="number" step="any" placeholder="105.8506" /></label>
+          <label>Giá thấp nhất (VNĐ)<input name="price_min" type="number" placeholder="40000" /></label>
+          <label>Giá cao nhất (VNĐ)<input name="price_max" type="number" placeholder="70000" /></label>
+        </div>
+        <label class="full">Mô tả<textarea name="description" rows="3" placeholder="Mô tả ngắn về địa điểm, món ăn đặc trưng..."></textarea></label>
+        <p class="hint">💡 Mẹo: nhấn vào bản đồ để lấy tọa độ Latitude/Longitude tự động.</p>
+        <button type="submit" class="btn-submit">Lưu địa điểm</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tìm bạn đi cùng -->
+  <div class="modal hidden" id="partnerModal">
+    <div class="modal-box partner-box">
+      <h2>👥 Tìm bạn đi cùng</h2>
+      <button class="close-btn" id="closePartner">✕</button>
+
+      <!-- Đăng ký -->
+      <div class="partner-register">
+        <h3>Đăng ký tìm bạn</h3>
+<p class="partner-note">📌 <strong>Lưu ý format mục tiêu:</strong> phải nhập đúng dạng <code>Tên địa điểm (Số nhà Tên đường)</code>. Ví dụ: <code>Cafe G-Life (111 Phan Đình Phùng)</code> — các dạng khác sẽ không được chấp nhận. Giờ đi nhập dạng <code>20h45</code> (giờ + h + phút, 24h).</p>
+        <p class="hint">Nhập thông tin của bạn (họ tên, tuổi, SĐT chỉ lưu bí mật — không hiển thị công khai)</p>
+        <form id="partnerForm">
+          <div class="form-grid">
+            <label>Họ và tên đầy đủ *<input required name="full_name" placeholder="Vd: Nguyễn Văn Minh" /></label>
+            <label>Tuổi *<input required name="age" type="number" min="10" max="100" placeholder="Vd: 25" /></label>
+            <label>Số điện thoại *<input required name="phone" type="tel" placeholder="Vd: 0901234567" /></label>
+            <label>Mục tiêu muốn đến *<input required name="destination" placeholder="Vd: Cafe G-Life (111 Phan Đình Phùng)" /></label>
+            <label>Giờ đi *<input required name="depart_time" type="text" placeholder="Vd: 20h45" maxlength="5" /></label>
+            <label>Ngày đi *<input required name="depart_date" type="date" /></label>
+          </div>
+          <button type="submit" class="btn-submit">Đăng ký tìm bạn</button>
+        </form>
+      </div>
+
+      <!-- Danh sách người tìm bạn -->
+      <div class="partner-list-section">
+        <h3>👀 Danh sách người đang tìm bạn</h3>
+        <div class="partner-filter">
+          <input type="text" id="partnerDestFilter" placeholder="Lọc theo mục tiêu..." />
+          <button id="partnerFilterBtn">🔍</button>
+        </div>
+        <div id="partnerList" class="partner-list">
+          <p class="list-hint">Đang tải...</p>
+        </div>
+      </div>
+
+      <!-- Kết quả match (hiện thông tin đầy đủ) -->
+      <div class="partner-matches-section">
+        <h3>✅ Bạn đã match với</h3>
+        <div id="partnerMatches" class="partner-matches">
+          <p class="list-hint">Nhập ID đăng ký của bạn để xem match...</p>
+        </div>
+      </div>
+
+      <!-- Hủy đăng ký -->
+      <div class="partner-cancel-section">
+        <h3>🚫 Hủy đăng ký tìm bạn</h3>
+        <p class="list-hint" style="text-align:left;padding:0 0 8px">Bấm nút để hủy đăng ký tìm bạn hiện tại của bạn (ngừng tìm bạn).</p>
+        <button class="btn-delete-place" style="margin:0;width:100%;padding:11px 16px" onclick="cancelPartnerRegister()">🚫 Hủy đăng ký</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

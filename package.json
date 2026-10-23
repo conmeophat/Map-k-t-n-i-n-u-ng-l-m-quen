@@ -1,0 +1,16 @@
+{
+  "name": "foodie-map-vietnam",
+  "version": "1.0.0",
+  "description": "Bản đồ ẩm thực & shopping Việt Nam - review chất lượng và giá tiền",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5"
+  }
+}
